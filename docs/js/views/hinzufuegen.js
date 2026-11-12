@@ -25,6 +25,8 @@ export default async function hinzufuegen(el, params) {
         <div class="feld"><label for="h-marke">Marke</label><input id="h-marke" name="marke"></div>
         <div class="feld"><label for="h-kat">Kategorie</label><select id="h-kat" name="kategorie_id">${optionen(kategorien, '', '– keine –')}</select></div>
       </div>
+      <div class="feld"><label for="h-bem">Bemerkung zum Artikel</label>
+        <textarea id="h-bem" name="bemerkung" rows="2" placeholder="z. B. nur für Kuchen, schmeckt bitter = ranzig"></textarea></div>
 
       <div class="zeile">
         <div class="feld"><label for="h-ort">Lagerort</label><select id="h-ort" name="lagerort_id" required>${optionen(lagerorte, startOrt)}</select></div>
@@ -83,7 +85,10 @@ export default async function hinzufuegen(el, params) {
       if (![...feld('einheit').options].some((o) => o.value === p.einheit)) feld('einheit').add(new Option(p.einheit, p.einheit));
       feld('einheit').value = p.einheit;
     }
-    if (mitId) feld('mindestbestand').value = p.mindestbestand ?? 0;
+    if (mitId) {
+      feld('mindestbestand').value = p.mindestbestand ?? 0;
+      feld('bemerkung').value = p.bemerkung || '';
+    }
     if (p.barcode) feld('barcode').value = p.barcode;
   }
 
@@ -171,6 +176,7 @@ export default async function hinzufuegen(el, params) {
           kategorie_id: f.kategorie_id || null,
           einheit: f.einheit,
           mindestbestand: f.mindestbestand,
+          bemerkung: f.bemerkung,
           bild_url: bildUrl,
         },
         lagerort_id: f.lagerort_id,
@@ -179,7 +185,10 @@ export default async function hinzufuegen(el, params) {
       });
       lagerortMerken(f.lagerort_id);
       meldung(`„${r.name}“ in ${r.lagerort} eingelagert.`);
-      if (!produkte.some((p) => p.id === r.produkt_id)) produkte.push({ id: r.produkt_id, name: r.name, marke: r.marke, einheit: r.einheit, mindestbestand: r.mindestbestand, kategorie_id: r.kategorie_id, barcode: r.barcode });
+      const bekannt = { id: r.produkt_id, name: r.name, marke: r.marke, einheit: r.einheit, mindestbestand: r.mindestbestand, kategorie_id: r.kategorie_id, barcode: r.barcode, bemerkung: r.bemerkung };
+      const i = produkte.findIndex((p) => p.id === r.produkt_id);
+      if (i >= 0) produkte[i] = bekannt;
+      else produkte.push(bekannt);
       zuruecksetzen();
       if (weiter) scannen();
       else window.scrollTo(0, 0);

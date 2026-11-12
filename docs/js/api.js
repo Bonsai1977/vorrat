@@ -82,6 +82,27 @@ export function einheitOptionen(gewaehlt = 'Stück') {
   return liste.map((e) => `<option ${e === gewaehlt ? 'selected' : ''}>${esc(e)}</option>`).join('');
 }
 
+// Datei ans Handy übergeben: Teilen-Menü (z. B. Google Drive, Mail), sonst normaler Download.
+// Gibt false zurück, wenn der Nutzer das Teilen abgebrochen hat.
+export async function dateiWeitergeben(datei, titel) {
+  if (navigator.canShare?.({ files: [datei] })) {
+    try {
+      await navigator.share({ files: [datei], title: titel });
+      return true;
+    } catch (f) {
+      if (f.name === 'AbortError') return false;
+    }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(datei);
+  a.download = datei.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  return true;
+}
+
 // Fehler einer async-Aktion als Meldung anzeigen
 export function sicher(fn) {
   return async (...args) => {

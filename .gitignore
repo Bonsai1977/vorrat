@@ -1,3 +1,10 @@
 .claude/
 node_modules/
 daten/
+
+# Eigene Tabellen und Sicherungen enthalten persönliche Vorratsdaten – nie hochladen
+*.xlsx
+*.xls
+*.csv
+*.json
+!docs/**/*.json

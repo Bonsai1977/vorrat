@@ -1,10 +1,10 @@
 // Service Worker: Die App funktioniert dadurch auch ohne Internet.
 // Antwortet sofort aus dem Zwischenspeicher und holt im Hintergrund die neueste Version.
 // Bei Änderungen an der App VERSION hochzählen.
-const VERSION = 'vorrat-v2';
+const VERSION = 'vorrat-v3';
 const DATEIEN = [
   './', 'index.html', 'app.css', 'manifest.webmanifest', 'vendor/zxing.min.js',
-  'js/app.js', 'js/api.js', 'js/speicher.js', 'js/dialog.js', 'js/scanner.js', 'js/bearbeiten.js',
+  'js/app.js', 'js/api.js', 'js/speicher.js', 'js/dialog.js', 'js/scanner.js', 'js/bearbeiten.js', 'js/export.js',
   'js/views/uebersicht.js', 'js/views/vorrat.js', 'js/views/hinzufuegen.js',
   'js/views/einkaufsliste.js', 'js/views/einstellungen.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-180.png',

@@ -1,6 +1,7 @@
 // Ganzer Vorrat mit Filtern
 import { holen, stammdaten, optionen, esc, ICON } from '../api.js';
 import { bestandZeile, listeVerdrahten } from '../bearbeiten.js';
+import { bestandExportieren } from '../export.js';
 
 // Filter bleiben erhalten, solange die App offen ist
 const filter = { suche: '', lagerort: '', kategorie: '', sortierung: 'mhd' };
@@ -52,7 +53,9 @@ export default async function vorrat(el, params) {
       }
       html += bestandZeile(e, einstellungen.warnschwelle_tage);
     }
-    ergebnis.innerHTML = `${html}</ul><p class="leise" style="text-align:center">${eintraege.length} Einträge</p>`;
+    ergebnis.innerHTML = `${html}</ul><p class="leise" style="text-align:center">${eintraege.length} Einträge</p>
+      <button class="knopf breit" type="button" data-csv>Gesamten Bestand als Tabelle (CSV)</button>`;
+    ergebnis.querySelector('[data-csv]').addEventListener('click', bestandExportieren);
     ergebnis.querySelectorAll('ul.liste').forEach((ul) => listeVerdrahten(ul, eintraege, laden));
   }
 

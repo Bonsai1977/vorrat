@@ -26,6 +26,12 @@ Beim ersten Scannen fragt Chrome, ob die App die Kamera benutzen darf → **Zula
 | **Einkauf** | Einkaufsliste. Produkte unter ihrem **Mindestbestand** erscheinen automatisch. Im Laden abhaken, mit dem Kisten-Symbol direkt in den Vorrat buchen |
 | **Mehr** | Lagerorte und Kategorien anpassen, Warnzeit fürs MHD, Mindestbestände, Datensicherung |
 
+**Gleicher Artikel an mehreren Orten oder mit verschiedenen MHDs:** Artikel im Vorrat antippen → **„+ Weitere Packung (anderer Ort oder MHD)“**. Dort Menge, Lagerort und MHD wählen → **Einlagern**. Im Bearbeiten-Fenster siehst du oben alle anderen Packungen dieses Artikels.
+
+**Bemerkung:** Jeder Artikel hat ein Feld **„Bemerkung zum Artikel“** (beim Hinzufügen und beim Bearbeiten). Sie erscheint in der Vorratsliste unter dem Artikel, und die Suche findet auch Wörter aus der Bemerkung.
+
+**Bestand als Tabelle:** Unten in der Vorratsliste oder unter **Mehr → Bestandsliste als Tabelle** → **„Tabelle (CSV) erstellen“**. Die Datei enthält den gesamten Vorrat mit Produkt, Marke, Kategorie, Lagerort, Menge, Einheit, MHD, Tagen bis zum MHD, Status, Mindestbestand, Bemerkung und Barcode. Sie öffnet sich in Excel oder Google Tabellen. Am besten in Google Drive speichern oder dir per Mail schicken.
+
 **Entnehmen:** Oben rechts auf **„Entnehmen“** tippen und den Barcode scannen. Die App nimmt automatisch die Packung, die am frühesten abläuft.
 
 **Barcode wird nicht erkannt?** Im Scanner auf „Foto aufnehmen“ tippen oder die Nummer unter dem Strichcode eintippen. Produktnamen holt die App aus der freien Datenbank Open Food Facts. Kennt sie ein Produkt nicht, trägst du den Namen einmal ein, beim nächsten Scan weiß die App ihn.

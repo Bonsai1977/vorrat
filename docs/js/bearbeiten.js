@@ -1,15 +1,71 @@
 // Dialog: einen Vorratseintrag (und das zugehörige Produkt) bearbeiten
-import { aendern, loeschen, stammdaten, esc, optionen, einheitOptionen, meldung, mhdInfo } from './api.js';
+import { holen, senden, aendern, loeschen, stammdaten, esc, optionen, einheitOptionen, meldung, mhdInfo, zahlText, datumText, heuteISO } from './api.js';
 import { dialogOeffnen } from './dialog.js';
 
+// Dialog: eine weitere Packung desselben Artikels einlagern (anderer Ort und/oder anderes MHD)
+export async function weiterePackung(e) {
+  const { lagerorte } = await stammdaten();
+  return new Promise((aufloesen) => {
+    let gespeichert = false;
+    const dlg = dialogOeffnen(`
+      <h3>Weitere Packung</h3>
+      <p class="leise" style="margin-top:-8px">${esc(e.name)}${e.marke ? ` · ${esc(e.marke)}` : ''}</p>
+      <form class="stapel">
+        <div class="zeile">
+          <div class="feld"><label for="w-menge">Menge (${esc(e.einheit)})</label>
+            <input id="w-menge" name="menge" type="number" inputmode="decimal" step="any" min="0.01" value="1" required></div>
+          <div class="feld"><label for="w-ort">Lagerort</label>
+            <select id="w-ort" name="lagerort_id">${optionen(lagerorte, e.lagerort_id)}</select></div>
+        </div>
+        <div class="feld"><label for="w-mhd">Mindesthaltbar bis</label>
+          <input id="w-mhd" name="mhd" type="date"></div>
+        <div class="knopfreihe" data-mhd-schnell style="gap:6px">
+          <button type="button" class="marke" data-tage="30">+1 Monat</button>
+          <button type="button" class="marke" data-tage="90">+3 Monate</button>
+          <button type="button" class="marke" data-tage="365">+1 Jahr</button>
+          <button type="button" class="marke" data-tage="">ohne MHD</button>
+        </div>
+        <div class="dialog-fuss">
+          <button class="knopf" type="button" data-schliessen>Abbrechen</button>
+          <button class="knopf haupt">Einlagern</button>
+        </div>
+      </form>`, { beimSchliessen: () => aufloesen(gespeichert) });
+    const form = dlg.querySelector('form');
+    dlg.querySelector('[data-mhd-schnell]').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-tage]');
+      if (b) form.elements.mhd.value = b.dataset.tage ? heuteISO(Number(b.dataset.tage)) : '';
+    });
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const f = Object.fromEntries(new FormData(form));
+      try {
+        const r = await senden('bestand', { produkt_id: e.produkt_id, lagerort_id: f.lagerort_id, menge: f.menge, mhd: f.mhd });
+        gespeichert = true;
+        meldung(`Weitere Packung „${e.name}“ in ${r.lagerort} eingelagert.`);
+        dlg.close();
+      } catch (f2) { meldung(f2.message, 'fehler'); }
+    });
+  });
+}
+
 export async function bestandBearbeiten(e) {
-  const { lagerorte, kategorien, einstellungen } = await stammdaten();
+  const [{ lagerorte, kategorien, einstellungen }, alleBestaende] = await Promise.all([stammdaten(), holen('bestand?sortierung=mhd')]);
+  const andere = alleBestaende.filter((b) => b.produkt_id === e.produkt_id && b.id !== e.id);
   return new Promise((aufloesen) => {
     let geaendert = false;
+    let packungDanach = false;
     const info = mhdInfo(e.mhd, einstellungen.warnschwelle_tage);
     const dlg = dialogOeffnen(`
       <h3>${esc(e.name)}</h3>
       <p class="leise" style="margin-top:-8px">${esc(e.marke || '')} <span class="marke ${info.klasse}">${esc(info.text)}</span></p>
+      ${andere.length ? `
+        <p class="leise" style="margin:0 0 4px">Weitere Packungen dieses Artikels:</p>
+        <ul class="packungen">${andere.map((b) => {
+          const i = mhdInfo(b.mhd, einstellungen.warnschwelle_tage);
+          return `<li><b>${esc(zahlText(b.menge))} ${esc(b.einheit)}</b><span>${esc(b.lagerort)}</span>
+            <span class="marke ${i.klasse}">${esc(b.mhd ? 'MHD ' + datumText(b.mhd) : 'ohne MHD')}</span></li>`;
+        }).join('')}</ul>` : ''}
+      <button class="knopf breit" type="button" data-packung style="margin-bottom:14px">+ Weitere Packung (anderer Ort oder MHD)</button>
       <form class="stapel" data-form>
         <div class="zeile">
           <div class="feld"><label for="b-menge">Menge (${esc(e.einheit)})</label>
@@ -19,6 +75,8 @@ export async function bestandBearbeiten(e) {
         </div>
         <div class="feld"><label for="b-ort">Lagerort</label>
           <select id="b-ort" name="lagerort_id">${optionen(lagerorte, e.lagerort_id)}</select></div>
+        <div class="feld"><label for="b-bem">Bemerkung zum Artikel</label>
+          <textarea id="b-bem" name="bemerkung" rows="2">${esc(e.bemerkung || '')}</textarea></div>
 
         <details>
           <summary class="leise" style="cursor:pointer">Produktangaben ändern</summary>
@@ -45,7 +103,18 @@ export async function bestandBearbeiten(e) {
           <button class="knopf haupt">Speichern</button>
         </div>
       </form>
-    `, { beimSchliessen: () => aufloesen(geaendert) });
+    `, {
+      beimSchliessen: () => {
+        // Nach dem Schließen ggf. direkt den Dialog für eine weitere Packung öffnen
+        if (packungDanach) weiterePackung(e).then((neu) => aufloesen(geaendert || neu));
+        else aufloesen(geaendert);
+      },
+    });
+
+    dlg.querySelector('[data-packung]').addEventListener('click', () => {
+      packungDanach = true;
+      dlg.close();
+    });
 
     dlg.querySelector('[data-weg]').addEventListener('click', async () => {
       if (!confirm(`„${e.name}“ (${e.lagerort}) komplett aus dem Vorrat nehmen?`)) return;
@@ -63,7 +132,7 @@ export async function bestandBearbeiten(e) {
       try {
         await aendern(`produkte/${e.produkt_id}`, {
           name: f.name, marke: f.marke, kategorie_id: f.kategorie_id || null,
-          einheit: f.einheit, mindestbestand: f.mindestbestand, barcode: f.barcode,
+          einheit: f.einheit, mindestbestand: f.mindestbestand, barcode: f.barcode, bemerkung: f.bemerkung,
         });
         await aendern(`bestand/${e.id}`, { menge: f.menge, mhd: f.mhd, lagerort_id: f.lagerort_id });
         geaendert = true;
@@ -96,6 +165,7 @@ export function bestandZeile(e, warnTage, { mitKnoepfen = true } = {}) {
         ${mitKnoepfen ? `<span>${esc(e.einheit)}</span>` : ''}
         <span class="marke ${info.klasse}">${esc(info.text)}</span>
       </div>
+      ${e.bemerkung ? `<div class="bemerkung">${esc(e.bemerkung)}</div>` : ''}
     </div>
     ${knoepfe}
   </li>`;

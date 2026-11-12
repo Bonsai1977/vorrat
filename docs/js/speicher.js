@@ -127,7 +127,7 @@ function bestandVoll(b) {
   return {
     ...b,
     name: p.name, marke: p.marke ?? null, barcode: p.barcode ?? null, einheit: p.einheit, mindestbestand: p.mindestbestand,
-    bild_url: p.bild_url ?? null, kategorie_id: p.kategorie_id ?? null, kategorie: k?.name ?? null,
+    bild_url: p.bild_url ?? null, kategorie_id: p.kategorie_id ?? null, kategorie: k?.name ?? null, bemerkung: p.bemerkung ?? null,
     lagerort: l.name, lagerort_sortierung: l.sortierung ?? 0,
   };
 }
@@ -162,6 +162,7 @@ function produktSpeichern(p) {
       einheit: text(p.einheit) ?? alt.einheit,
       mindestbestand: p.mindestbestand !== undefined ? zahl(p.mindestbestand) : alt.mindestbestand,
       bild_url: p.bild_url !== undefined ? text(p.bild_url) : alt.bild_url,
+      bemerkung: p.bemerkung !== undefined ? text(p.bemerkung) : (alt.bemerkung ?? null),
     });
     return alt.id;
   }
@@ -169,7 +170,7 @@ function produktSpeichern(p) {
   if (!name) throw new Fehler('Bitte einen Produktnamen angeben.');
   const neu = {
     id: neueId('produkte'), name, marke: text(p.marke), barcode, kategorie_id: p.kategorie_id ? Number(p.kategorie_id) : null,
-    einheit: text(p.einheit) ?? 'Stück', mindestbestand: zahl(p.mindestbestand), bild_url: text(p.bild_url),
+    einheit: text(p.einheit) ?? 'Stück', mindestbestand: zahl(p.mindestbestand), bild_url: text(p.bild_url), bemerkung: text(p.bemerkung),
   };
   z.produkte.push(neu);
   return neu.id;
@@ -227,7 +228,8 @@ function namePruefen(tabelle, name, ohneId) {
 
 function suchtreffer(p, suche) {
   const s = suche.toLowerCase();
-  return (p.name || '').toLowerCase().includes(s) || (p.marke || '').toLowerCase().includes(s) || p.barcode === suche;
+  return (p.name || '').toLowerCase().includes(s) || (p.marke || '').toLowerCase().includes(s) ||
+    (p.bemerkung || '').toLowerCase().includes(s) || p.barcode === suche;
 }
 
 function einkaufVoll(e) {
@@ -308,7 +310,7 @@ async function barcodeNachschlagen(code) {
 const SICHERUNG_SPALTEN = {
   lagerorte: ['id', 'name', 'sortierung'],
   kategorien: ['id', 'name'],
-  produkte: ['id', 'name', 'marke', 'barcode', 'kategorie_id', 'einheit', 'mindestbestand', 'bild_url'],
+  produkte: ['id', 'name', 'marke', 'barcode', 'kategorie_id', 'einheit', 'mindestbestand', 'bild_url', 'bemerkung'],
   bestand: ['id', 'produkt_id', 'lagerort_id', 'menge', 'mhd', 'hinzugefuegt_am'],
   einkaufsliste: ['id', 'produkt_id', 'freier_text', 'menge', 'erledigt', 'automatisch', 'erstellt_am'],
   einstellungen: ['schluessel', 'wert'],

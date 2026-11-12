@@ -1,5 +1,6 @@
 // Einstellungen: Lagerorte, Kategorien, Warnschwelle, Artikelstamm, Datensicherung
-import { holen, senden, aendern, loeschen, stammdaten, stammVergessen, esc, zahlText, meldung, ICON } from '../api.js';
+import { holen, senden, aendern, loeschen, stammdaten, stammVergessen, esc, zahlText, meldung, dateiWeitergeben, ICON } from '../api.js';
+import { bestandExportieren } from '../export.js';
 
 export default async function einstellungen(el) {
   const [{ lagerorte, kategorien, einstellungen: e }, produkte] = await Promise.all([
@@ -45,6 +46,13 @@ export default async function einstellungen(el) {
       </li>`).join('') || '<li class="leise">Noch keine Produkte.</li>'}
     </ul>
 
+    <h2>Bestandsliste als Tabelle</h2>
+    <div class="karte stapel">
+      <p class="leise" style="margin:0">Erstellt eine Tabelle mit dem gesamten Vorrat (Produkt, Marke, Kategorie, Lagerort, Menge, MHD, Status, Bemerkung …).
+        Die CSV-Datei öffnet sich in Excel oder Google Tabellen.</p>
+      <button class="knopf" type="button" data-csv>Tabelle (CSV) erstellen</button>
+    </div>
+
     <h2>Datensicherung</h2>
     <div class="karte stapel">
       <p style="margin:0">Deine Daten liegen <b>nur auf diesem Handy</b>. Wenn du die Browserdaten löschst oder das Handy verlierst, sind sie weg.
@@ -56,7 +64,7 @@ export default async function einstellungen(el) {
         <input type="file" accept="application/json,.json" hidden data-import-datei>
       </div>
     </div>
-    <p class="leise" style="text-align:center;margin-top:24px">Vorratshaltung 2.0 · Daten nur auf diesem Gerät · Produktdaten von <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a></p>
+    <p class="leise" style="text-align:center;margin-top:24px">Vorratshaltung 2.1 · Daten nur auf diesem Gerät · Produktdaten von <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a></p>
   </div>`;
 
   const wurzel = el.querySelector('[data-wurzel]');
@@ -115,30 +123,15 @@ export default async function einstellungen(el) {
     catch (f) { meldung(f.message, 'fehler'); }
   });
 
+  wurzel.querySelector('[data-csv]').addEventListener('click', bestandExportieren);
+
   // Datensicherung speichern: Teilen-Menü (z. B. Google Drive, Mail) oder Download
   wurzel.querySelector('[data-export]').addEventListener('click', async () => {
     try {
       const s = await holen('backup');
       const name = `vorrat-sicherung-${s.erstellt.slice(0, 10)}.json`;
       const datei = new File([JSON.stringify(s, null, 1)], name, { type: 'application/json' });
-      let geteilt = false;
-      if (navigator.canShare?.({ files: [datei] })) {
-        try {
-          await navigator.share({ files: [datei], title: 'Vorrat-Sicherung' });
-          geteilt = true;
-        } catch (f) {
-          if (f.name === 'AbortError') return;
-        }
-      }
-      if (!geteilt) {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(datei);
-        a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-      }
+      if (!(await dateiWeitergeben(datei, 'Vorrat-Sicherung'))) return;
       await aendern('backup/erledigt', {});
       meldung('Sicherung gespeichert.');
       neu();
